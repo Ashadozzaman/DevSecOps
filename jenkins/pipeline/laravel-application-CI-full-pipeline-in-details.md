@@ -16,7 +16,7 @@ Jenkins allows you to set up various build triggers for your pipeline. Two commo
 - **Installation**: Install the `Generic Webhook Trigger` plugin.
 - **Webhook URL**: Use the following URL to trigger the webhook:
   ```
-  https://cicd.training.mygov.bd/generic-webhook-trigger/invoke?token=TOKEN_HERE
+  https://cicd.training.bd/generic-webhook-trigger/invoke?token=TOKEN_HERE
   ```
 - **Post Content Parameters**: Configure the following parameters:
   - `Variable`: `action`, `Expression`: `$.action`
@@ -65,9 +65,9 @@ pipeline {
 
     environment {
         IMAGE_TAG = "${BUILD_NUMBER}"
-        GIT_REPO = "https://github.com/Ashadozzaman/Template-Builder.git"
-        CLIENT_APP_NAME = "Template-Builder"
-        CONFIG_PROJECT_NAME = "template_builder"
+        GIT_REPO = "https://github.com/Ashadozzaman/Test-Builder.git"
+        CLIENT_APP_NAME = "Test-Builder"
+        CONFIG_PROJECT_NAME = "test_builder"
         ENV_FILE_PATH = "/var/www/html/env_files/.env" // Stored outside the workspace
         CUSTOM_WORKSPACE = "/var/www/html/template-builder"
     }
