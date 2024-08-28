@@ -34,7 +34,7 @@ pipeline {
                             echo 'Running Stage 2'
                         },
                         'Step 1' : {
-                            echo "1"
+                            ech••••••••••o "1"
                         },
                         'Step 2' : {
                             echo "2"

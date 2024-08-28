@@ -1,42 +1,63 @@
-### Create Pipeline Job In Jenkins
-- We can use two type `Build Triggers`
+### Jenkins Pipeline Setup
 
-**GitHub hook trigger for GITScm polling:**
-- Default Manage git weebhook trigger
+This guide will walk you through setting up a Jenkins pipeline, configuring build triggers, and creating an agent to connect Jenkins with multiple servers.
 
-**Generic Webhook Trigger:**
-- Using this dynamiclly manage git action
-- Install `generic webhook triger plugin` 
-- https://cicd.training.mygov.bd/generic-webhook-trigger/invoke?token=TOKEN_HERE
-- **Post content parameters**
-    ```
-    Set `Variable` "action", `Expression` "$.action"
-    Set `Variable` "base", `Expression` "$.pull_request.base.ref"
-    Set `Variable` "head", `Expression` "$.pull_request.base.ref"
-    Set `Variable` "success", `Expression` "$.pull_request.merged"
-    ```
-- **Post content parameters**
-    - `Optional filter:` Expression ->  `^closed main dev true$ `// This is the structure to write value for each variable
-    - `Optional filter:` Text ->  `$action $base $head $success` // Post Content variable call this away
+---
 
-### Create Agent 
-- Through by agent connect jenkins server with multiple server.
-- First Create `Node`- Permarent Agent
-- Executer 2
-- Remote Root dir
-- Lunch Via SSH
-- Agent Host
-- Set Key- 
-    - For AWS set key-pair
-    - Connect Other VM with jenkins server
-        ```
-        root@Management2:~# cd .ssh/
-        root@Management2:~/.ssh# ls
-        authorized_keys  id_ed25519  id_ed25519.pub  id_rsa  id_rsa.pub  known_hosts
-        ```
-        - This public key (`id_ed25519`) add in agent VM authorized_keys & private key(`id_ed25519.pub`) need to agent credential.
+### Pipeline Build Triggers
 
-```
+Jenkins allows you to set up various build triggers for your pipeline. Two common triggers are:
+
+#### 1. GitHub Hook Trigger for GITScm Polling
+- This is the default trigger provided by Jenkins for managing GitHub webhooks.
+  
+#### 2. Generic Webhook Trigger
+- This trigger allows more dynamic management of Git actions.
+- **Installation**: Install the `Generic Webhook Trigger` plugin.
+- **Webhook URL**: Use the following URL to trigger the webhook:
+  ```
+  https://cicd.training.mygov.bd/generic-webhook-trigger/invoke?token=TOKEN_HERE
+  ```
+- **Post Content Parameters**: Configure the following parameters:
+  - `Variable`: `action`, `Expression`: `$.action`
+  - `Variable`: `base`, `Expression`: `$.pull_request.base.ref`
+  - `Variable`: `head`, `Expression`: `$.pull_request.base.ref`
+  - `Variable`: `success`, `Expression`: `$.pull_request.merged`
+- **Optional Filters**:
+  - **Expression**: `^closed main dev true$` - This defines the structure to write values for each variable.
+  - **Text**: `$action $base $head $success` - Call the post content variables.
+
+---
+
+### Creating a Jenkins Agent
+
+To connect Jenkins with multiple servers, you'll need to create a permanent agent:
+
+1. **Create a Node**:
+   - Navigate to `Manage Jenkins` > `Manage Nodes and Clouds` > `New Node`.
+   - Set up a `Permanent Agent`.
+
+2. **Agent Configuration**:
+   - **Executors**: Set the number of executors (recommended: 2).
+   - **Remote Root Directory**: Specify the directory on the agent machine where Jenkins will store files.
+   - **Launch Method**: Choose `Launch agent via SSH`.
+   - **Host**: Provide the agent's hostname or IP address.
+   - **Credentials**: Set up SSH credentials for the agent.
+     - For AWS, use the key-pair provided by AWS.
+     - For other VMs, connect using SSH keys. Add the public key (`id_ed25519.pub`) from your Jenkins server to the `authorized_keys` file on the agent VM. The private key is used in Jenkins credentials.
+     ```
+     root@Management2:~# cd .ssh/
+     root@Management2:~/.ssh# ls
+     authorized_keys  id_ed25519  id_ed25519.pub  id_rsa  id_rsa.pub  known_hosts
+     ```
+
+---
+
+### Jenkins Pipeline Script
+
+Below is an example of a Jenkins pipeline script. This script demonstrates how to clean up the workspace, check out a Git repository, manage environment variables, restore backups, and run project builds.
+
+```groovy
 pipeline {
     agent {
         label 'Live-Template'
@@ -59,16 +80,8 @@ pipeline {
         stage('CLEANUP WORKSPACE') {
             steps {
                 script {
-                    sh "rm -rf ${CUSTOM_WORKSPACE}"
-                }
-            }
-        }
-        
-        stage("Cleanup Workspace") {
-            steps {
-                script {
                     echo "Cleaning up workspace..."
-                    sh 'sudo rm -rf /var/www/html/caches /var/www/html/remoting /var/www/html/remoting.jar ${CUSTOM_WORKSPACE}'
+                    sh "sudo rm -rf /var/www/html/caches /var/www/html/remoting /var/www/html/remoting.jar ${CUSTOM_WORKSPACE}"
                 }
             }
         }
@@ -115,24 +128,23 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir("${CUSTOM_WORKSPACE}") {
-                    // Install npm dependencies
-                    sh 'npm install'
+                    sh 'npm install' // Install npm dependencies
                 }
             }
         }
+        
         stage('Install Vite') {
             steps {
                 dir("${CUSTOM_WORKSPACE}") {
-                    // Install Vite as a development dependency
-                    sh 'npm install vite --save-dev'
+                    sh 'npm install vite --save-dev' // Install Vite as a development dependency
                 }
             }
         }
+        
         stage('Build Project') {
             steps {
                 dir("${CUSTOM_WORKSPACE}") {
-                    // Build the project
-                    sh 'npm run build'
+                    sh 'npm run build' // Build the project
                 }
             }
         }
@@ -140,8 +152,7 @@ pipeline {
         stage('Update Dependencies') {
             steps {
                 dir("${CUSTOM_WORKSPACE}") {
-                    // Install Composer dependencies
-                    sh 'composer update'
+                    sh 'composer update' // Install Composer dependencies
                 }
             }
         }
@@ -169,7 +180,7 @@ pipeline {
 
     post {
         always {
-            echo "Cleaning up workspace..."
+            echo "Pipeline completed. Cleaning up workspace..."
         }
         success {
             echo 'Pipeline executed successfully.'
@@ -180,3 +191,10 @@ pipeline {
     }
 }
 ```
+
+---
+
+### Key Changes:
+1. **Pipeline Build Triggers**: Organized into clear subsections for better readability.
+2. **Agent Creation**: Expanded and clarified steps for connecting Jenkins to multiple servers.
+3. **Pipeline Script**: Rearranged some of the stages and added comments for clarity. Combined similar cleanup steps into one stage.
